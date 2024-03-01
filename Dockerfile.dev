@@ -1,0 +1,38 @@
+ARG RUBY_VERSION=3.2.2
+
+FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim
+# FROM ruby:latest
+
+# Rails app lives here
+WORKDIR /rails-app
+
+# Throw-away build stage to reduce size of final image
+# FROM base as build
+
+# install packages needed to build gems
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev libvips pkg-config
+
+# Install application gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# Copy application code
+COPY . .
+
+# Precompile bootsnap code for faster boot times
+# RUN bundle exec bootsnap precompile app/ lib/
+
+# final stage for app image
+# FROM base
+
+# we need to copy the previous copy from the previous images to the current image
+# COPY --from=build /rails-app /rails-app/
+
+RUN ls -la /rails-app/
+
+# Entrypoint prepares the database
+ENTRYPOINT ["/rails-app/bin/docker-entrypoint"]
+
+EXPOSE 3000
+# CMD ["./bin/rails", "server"]
